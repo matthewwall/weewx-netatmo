@@ -16,14 +16,19 @@ Communication with the netatmo servers requires 4 things: username, password,
 client_id, and client_secret.  The username and password are the credentials
 used to access data at netatmo.com.  The client_id and client_secret must be
 obtained via the dev.netatmo.com web site.  Using these 4 things, the driver
-automatically obtains and updates the tokens needed to get data from the server.
+automatically obtains and updates the tokens needed to get data from the
+server.
 
 
 Installation instructions:
 
-1) run the installer:
+0) download the driver:
 
-wee_extension --install weewx-netatmo.tgz
+wget -O weewx-netatmo.zip https://github.com/matthewwall/weewx-netatmo/archive/master.zip
+
+1) install the driver:
+
+wee_extension --install weewx-netatmo.zip
 
 2) select and configure the driver:
 
