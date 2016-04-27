@@ -145,6 +145,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         loginf("driver version is %s" % DRIVER_VERSION)
         self.sensor_map = stn_dict.get(
             'sensor_map', NetatmoDriver.DEFAULT_SENSOR_MAP)
+        loginf('sensor map is %s' % self.sensor_map)
         device_id = stn_dict.get('device_id', None)
         mode = stn_dict.get('mode', 'cloud')
         if mode.lower() == 'sniff':
@@ -189,7 +190,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
     def data_to_packet(self, data):
         # convert netatmo data to format for database
         packet = dict()
-        packet['dateTime'] = data.pop('dateTime', int(time.time() + 0.5))
+        packet['dateTime'] = int(time.time() + 0.5)
         packet['usUnits'] = weewx.METRIC
         for n in self.sensor_map:
             label = self._find_match(n, data.keys())
@@ -204,6 +205,8 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
             return None
         for k in keylist:
             kparts = k.split('.')
+            if len(kparts) != 3:
+                return None
             if (NetatmoDriver._part_match(pparts[0], kparts[0]) and
                 NetatmoDriver._part_match(pparts[1], kparts[1]) and
                 NetatmoDriver._part_match(pparts[2], kparts[2])):
@@ -318,24 +321,31 @@ class CloudClient(Collector):
 
     @staticmethod
     def get_data(sd, device_id):
-        """Query the server for each device and module, put data on the queue"""
+        """Query the server for each device and module, put data on queue"""
         raw_data = sd.get_data(device_id)
         units_dict = dict((x, raw_data['user']['administrative'][x])
                           for x in CloudClient.UNITS)
         logdbg('cloud units: %s' % units_dict)
+        # i would prefer to do partial packets, but there is no guarantee that
+        # the timestamps will not align.  so aggregate into a single packet,
+        # and let the driver figure out what timestamp it wants to put on it.
+        alldata = dict() # single dict with all devices and modules
         for d in raw_data['devices']:
             data = CloudClient.extract_data(d, units_dict)
             data = CloudClient.apply_labels(data, d['_id'], d['type'])
-            Collector.queue.put(data)
+            alldata.update(data)
+#            Collector.queue.put(data)
             for m in d['modules']:
                 data = CloudClient.extract_data(m, units_dict)
                 data = CloudClient.apply_labels(data, m['_id'], m['type'])
-                Collector.queue.put(data)
+                alldata.update(data)
+#                Collector.queue.put(data)
+        Collector.queue.put(alldata)
 
     @staticmethod
     def extract_data(x, units_dict):
         """Extract data we care about from a device or module"""
-        data = {'dateTime': x['dashboard_data']['time_utc']}
+        data = {'time_utc': x['dashboard_data']['time_utc']}
         for n in CloudClient.META_ITEMS:
             if n in x:
                 data[n] = x[n]
@@ -343,6 +353,7 @@ class CloudClient(Collector):
             if n in x['dashboard_data']:
                 data[n] = x['dashboard_data'][n]
         # do any unit conversions - everything converts to weewx.METRIC
+# it looks like all the data are METRIC even when netatmo units say otherwise
 #        for n in data:
 #            try:
 #                func = CloudClient.CONVERSIONS.get(n)
@@ -356,14 +367,11 @@ class CloudClient(Collector):
     @staticmethod
     def apply_labels(data, xid, xtype):
         """Copy the data dict but use fully-qualified keys"""
-        new_data = dict()
-        for n in data:
-            # do not touch the timestamp
-            if n in ['dateTime']:
-                new_data[n] = data[n]
-            else:
-                new_data["%s.%s.%s" % (xid, xtype, n)] = data[n]
-        return new_data
+        return dict(("%s.%s.%s" % (xid, xtype, n), data[n]) for n in data)
+#        new_data = dict()
+#        for n in data:
+#            new_data["%s.%s.%s" % (xid, xtype, n)] = data[n]
+#        return new_data
 
     @staticmethod
     def _cvt_pressure(x, from_unit_dict):
