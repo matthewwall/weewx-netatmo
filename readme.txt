@@ -25,13 +25,9 @@ Installation instructions:
 
 wee_extension --install weewx-netatmo.tgz
 
-2) modify weewx.conf:
+2) select and configure the driver:
 
-[Netatmo]
-    username = INSERT_USERNAME_HERE
-    password = INSERT_PASSWORD_HERE
-    client_id = INSERT_CLIENT_ID_HERE
-    client_secret = INSERT_CLIENT_SECRET_HERE
+wee_config --reconfigure
 
 3) start weewx:
 
