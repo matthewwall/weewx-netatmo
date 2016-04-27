@@ -187,11 +187,10 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
                 logdbg('empty queue')
 
     def data_to_packet(self, data):
-        # convert netatmo data to format, units, and scaling for database
+        # convert netatmo data to format for database
         packet = dict()
         packet['dateTime'] = data.pop('dateTime', int(time.time() + 0.5))
-        packet['usUnits'] = data.pop('usUnits', weewx.US)
-
+        packet['usUnits'] = weewx.METRIC
         for n in self.sensor_map:
             label = self._find_match(n, data.keys())
             if label:
@@ -336,8 +335,7 @@ class CloudClient(Collector):
     @staticmethod
     def extract_data(x, units_dict):
         """Extract data we care about from a device or module"""
-        data = {'dateTime': x['dashboard_data']['time_utc'],
-                'usUnits': weewx.METRIC}
+        data = {'dateTime': x['dashboard_data']['time_utc']}
         for n in CloudClient.META_ITEMS:
             if n in x:
                 data[n] = x[n]
@@ -345,14 +343,14 @@ class CloudClient(Collector):
             if n in x['dashboard_data']:
                 data[n] = x['dashboard_data'][n]
         # do any unit conversions - everything converts to weewx.METRIC
-        for n in data:
-            try:
-                func = CloudClient.CONVERSIONS.get(n)
-                if func:
-                    data[n] = getattr(CloudClient, func)(data[n], units_dict)
-            except ValueError, e:
-                logerr("unit conversion failed for %s: %s" % (data[n], e))
-                data[n] = None
+#        for n in data:
+#            try:
+#                func = CloudClient.CONVERSIONS.get(n)
+#                if func:
+#                    data[n] = getattr(CloudClient, func)(data[n], units_dict)
+#            except ValueError, e:
+#                logerr("unit conversion failed for %s: %s" % (data[n], e))
+#                data[n] = None
         return data
 
     @staticmethod
@@ -360,8 +358,8 @@ class CloudClient(Collector):
         """Copy the data dict but use fully-qualified keys"""
         new_data = dict()
         for n in data:
-            # do not touch the timestamp or units
-            if n in ['dateTime', 'usUnits']:
+            # do not touch the timestamp
+            if n in ['dateTime']:
                 new_data[n] = data[n]
             else:
                 new_data["%s.%s.%s" % (xid, xtype, n)] = data[n]
