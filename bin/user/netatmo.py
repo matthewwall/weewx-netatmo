@@ -42,7 +42,7 @@ import weewx.units
 import weewx.wxformulas
 
 DRIVER_NAME = 'netatmo'
-DRIVER_VERSION = "X"
+DRIVER_VERSION = "0.2"
 
 INHG_PER_MBAR = 0.0295299830714
 CM_PER_IN = 2.54
