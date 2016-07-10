@@ -70,7 +70,7 @@ def logerr(msg):
 def loader(config_dict, engine):
     return NetatmoDriver(**config_dict[DRIVER_NAME])
 
-def confeditor_loader(config_dict):
+def confeditor_loader():
     return NetatmoConfEditor()
 
 
@@ -167,7 +167,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         else:
             raise ValueError("unsupported mode '%s'" % mode)
         self.collector.startup()
-    
+
     def closePort(self):
         self.collector.shutdown()
 
@@ -247,7 +247,7 @@ class CloudClient(Collector):
       lang: user locale
       reg_locale: regional preferences for date
       feel_like_algo: 0: humidex, 1: heat-index
-    
+
     rf_status is a mapping to rssi (+dB)
       0: 90, 1: 80, 2: 70, 3: 60
     wifi_status is a mapping to rssi (+dB)
@@ -384,7 +384,7 @@ class CloudClient(Collector):
 
     @staticmethod
     def _cvt_speed(x, from_unit_dict):
-        # windunit: 0: kph, 1: mph, 2: m/s, 3: beafort, 4: knot        
+        # windunit: 0: kph, 1: mph, 2: m/s, 3: beafort, 4: knot
         if from_unit_dict['windunit'] == 1:
             x *= MPH_TO_KPH
         elif from_unit_dict['windunit'] == 2:
@@ -510,7 +510,7 @@ class CloudClient(Collector):
         resp_obj = json.loads(resp)
         logdbg("resp_obj: %s" % resp_obj)
         return resp_obj
-        
+
 
 class PacketSniffer(Collector):
     """listen for incoming packets then parse them.  put result on queue."""
