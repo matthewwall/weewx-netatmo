@@ -45,7 +45,7 @@ DRIVER_NAME = 'netatmo'
 DRIVER_VERSION = "0.2"
 
 INHG_PER_MBAR = 0.0295299830714
-CM_PER_IN = 2.54
+MM_PER_IN = 25.4
 MPH_TO_KPH = 1.60934
 MPS_TO_KPH = 3.6
 BEAFORT_TO_KPH = {0: 1, 1: 3.0, 2: 9.0, 3: 15.0, 4: 24.0, 5: 34.0, 6: 43.0,
@@ -126,7 +126,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         '*.NAModule1.Temperature': 'outTemp',
         '*.NAModule1.Humidity': 'outHumidity',
         '*.NAModule1.rf_status': 'rf_status',
-        '*.NAModule1.battery_vp': 'battery_vp',
+        '*.NAModule1.battery_percent': 'outTempBatteryStatus',
         '*.NAModule4.Temperature': 'extraTemp1',
         '*.NAModule4.Humidity': 'extraHumid1',
         '*.NAModule4.rf_status': 'rf_status',
@@ -138,8 +138,10 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         '*.NAModule2.rf_status': 'rf_status',
         '*.NAModule2.battery_vp': 'battery_vp',
         '*.NAModule3.Rain': 'rain',
+        '*.NAModule3.sum_rain_1': 'rainRate',
+        '*.NAModule3.sum_rain_24': 'rain_total',
         '*.NAModule3.rf_status': 'rf_status',
-        '*.NAModule3.battery_vp': 'battery_vp'}
+        '*.NAModule3.battery_percent': 'rainBatteryStatus'}
 
     def __init__(self, **stn_dict):
         loginf("driver version is %s" % DRIVER_VERSION)
@@ -148,6 +150,9 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         loginf('sensor map is %s' % self.sensor_map)
         device_id = stn_dict.get('device_id', None)
         mode = stn_dict.get('mode', 'cloud')
+
+        self.last_rain = None
+
         if mode.lower() == 'sniff':
             port = int(stn_dict.get('port', NetatmoDriver.DEFAULT_PORT))
             addr = stn_dict.get('host', NetatmoDriver.DEFAULT_HOST)
@@ -183,6 +188,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
                 pkt = self.data_to_packet(data)
                 logdbg('packet: %s' % pkt)
                 if pkt:
+                    self._augment_packet(pkt)
                     yield pkt
             except Queue.Empty:
                 logdbg('empty queue')
@@ -221,6 +227,20 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
             return True
         return False
 
+    def _augment_packet(self, packet):
+        # calculate the rain delta from the total
+        if 'rain_total' in packet:
+            #convert from mm to cm for total rain
+            packet['rain_total'] = packet['rain_total'] / 10
+            packet['rainRate'] = packet['rainRate'] / 10
+            total = packet['rain_total']
+            if (total is not None and self.last_rain is not None and
+                total < self.last_rain):
+                loginf("rain counter decrement ignored:"
+                       " new: %s old: %s" % (total, self.last_rain))
+            packet['rain'] = weewx.wxformulas.calculate_rain(total, self.last_rain)
+            self.last_rain = total
+
 
 class Collector(object):
     queue = Queue.Queue()
@@ -237,7 +257,7 @@ class CloudClient(Collector):
 
     noise is measured in dB
     co2 is measured in ppm
-    rain is measured in mm (or inch?)  not specified in docs!
+    rain is measured in mm
     temperatures are measured in C or F
 
     the user object indicates the units of the download
@@ -278,11 +298,11 @@ class CloudClient(Collector):
     # these items are tracked from every module and every device
     DASHBOARD_ITEMS = [
         'Temperature', 'Humidity', 'AbsolutePressure', 'Pressure',
-        'CO2', 'Noise', 'Rain',
+        'CO2', 'Noise', 'Rain', 'sum_rain_24', 'sum_rain_1',
         'WindStrength', 'WindAngle', 'GustStrength', 'GustAngle']
     META_ITEMS = [
         'wifi_status', 'rf_status', 'battery_vp', 'co2_calibrating',
-        '_id', 'module_name', 'last_status_store', 'last_seen',
+        '_id', 'module_name', 'last_status_store', 'last_seen', 'battery_percent',
         'firmware', 'last_setup', 'last_upgrade', 'date_setup']
 
     def __init__(self, username, password, client_id, client_secret,
@@ -405,7 +425,7 @@ class CloudClient(Collector):
     def _cvt_rain(x, from_unit_dict):
         # FIXME: verify that 0 is cm and 1 is inch
         if from_unit_dict['unit'] == 1:
-            x *= CM_PER_IN
+            x *= MM_PER_IN
         return x
 
     def startup(self):
@@ -628,7 +648,7 @@ if __name__ == "__main__":
     def get_json_data(username, password, c_id, c_secret):
         auth = CloudClient.ClientAuth(username, password, c_id, c_secret)
         params = {'access_token': auth.access_token, 'app_type': 'app_station'}
-        reply = CloudClient.post_request(CloudClient.DEVICELIST_URL, params)
+        reply = CloudClient.post_request(CloudClient.DATA_URL, params)
         print json.dumps(reply, sort_keys=True, indent=2)
 
     def test_parse(filename):
