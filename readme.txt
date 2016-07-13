@@ -32,6 +32,10 @@ Lastly, I updated this to actually use the rain rate provided by the netatmo
 and also saved the battery status of the outdoor unit and the rain gauge.
 </SG>
 
+<SG>
+Removed the rain rate, wasn't showing on PWSWeather correctly
+</SG>
+
 Installation instructions:
 
 0) download the driver:
