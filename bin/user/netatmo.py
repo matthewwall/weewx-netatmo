@@ -138,7 +138,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         '*.NAModule2.rf_status': 'rf_status',
         '*.NAModule2.battery_vp': 'battery_vp',
         '*.NAModule3.Rain': 'rain',
-        '*.NAModule3.sum_rain_1': 'rainRate',
+        #'*.NAModule3.sum_rain_1': 'rainRate',
         '*.NAModule3.sum_rain_24': 'rain_total',
         '*.NAModule3.rf_status': 'rf_status',
         '*.NAModule3.battery_percent': 'rainBatteryStatus'}
@@ -232,7 +232,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         if 'rain_total' in packet:
             #convert from mm to cm for total rain
             packet['rain_total'] = packet['rain_total'] / 10
-            packet['rainRate'] = packet['rainRate'] / 10
+            #packet['rainRate'] = packet['rainRate'] / 10
             total = packet['rain_total']
             if (total is not None and self.last_rain is not None and
                 total < self.last_rain):
@@ -298,7 +298,7 @@ class CloudClient(Collector):
     # these items are tracked from every module and every device
     DASHBOARD_ITEMS = [
         'Temperature', 'Humidity', 'AbsolutePressure', 'Pressure',
-        'CO2', 'Noise', 'Rain', 'sum_rain_24', 'sum_rain_1',
+        'CO2', 'Noise', 'Rain', 'sum_rain_24', #'sum_rain_1',
         'WindStrength', 'WindAngle', 'GustStrength', 'GustAngle']
     META_ITEMS = [
         'wifi_status', 'rf_status', 'battery_vp', 'co2_calibrating',
