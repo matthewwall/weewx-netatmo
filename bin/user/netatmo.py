@@ -160,7 +160,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         elif mode.lower() == 'cloud':
             max_tries = int(stn_dict.get('max_tries', 5))
             retry_wait = int(stn_dict.get('retry_wait', 10)) # seconds
-            poll_interval = int(stn_dict.get('poll_interval', 600)) # seconds
+            poll_interval = int(stn_dict.get('poll_interval', 300)) # seconds
             username = stn_dict['username']
             password = stn_dict['password']
             client_id = stn_dict['client_id']
@@ -306,7 +306,7 @@ class CloudClient(Collector):
         'firmware', 'last_setup', 'last_upgrade', 'date_setup']
 
     def __init__(self, username, password, client_id, client_secret,
-                 device_id=None, poll_interval=600, max_tries=3, retry_wait=30):
+                 device_id=None, poll_interval=300, max_tries=3, retry_wait=30):
         self._poll_interval = poll_interval
         self._max_tries = max_tries
         self._retry_wait = retry_wait
@@ -507,7 +507,7 @@ class CloudClient(Collector):
             self._last_update = 0
             self._raw_data = dict()
 
-        def get_data(self, device_id=None, stale=600):
+        def get_data(self, device_id=None, stale=300):
             if int(time.time()) - self._last_update > stale:
                 params = {'access_token': self._auth.access_token}
                 if device_id:

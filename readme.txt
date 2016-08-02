@@ -19,14 +19,14 @@ obtained via the dev.netatmo.com web site.  Using these 4 things, the driver
 automatically obtains and updates the tokens needed to get data from the
 server.
 
-<SG> 
-I had to make some changes to Matt's code to get it to work correctly 
+<SG>
+I had to make some changes to Matt's code to get it to work correctly
 for me installation wise.
 
 I had to tweak the packet sent to weewx to convert the mm to cm.
 
-I also updated the way the rain was counted to match what some other drivers 
-were doing (new daily total - old daily total give you rain from last check).  
+I also updated the way the rain was counted to match what some other drivers
+were doing (new daily total - old daily total give you rain from last check).
 
 Lastly, I updated this to actually use the rain rate provided by the netatmo
 and also saved the battery status of the outdoor unit and the rain gauge.
@@ -34,6 +34,10 @@ and also saved the battery status of the outdoor unit and the rain gauge.
 
 <SG>
 Removed the rain rate, wasn't showing on PWSWeather correctly
+</SG>
+
+<SG>
+Updating time to check from 600 seconds to 300 seconds
 </SG>
 
 Installation instructions:
