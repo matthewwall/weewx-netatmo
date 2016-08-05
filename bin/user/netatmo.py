@@ -42,10 +42,9 @@ import weewx.units
 import weewx.wxformulas
 
 DRIVER_NAME = 'netatmo'
-DRIVER_VERSION = "X"
+DRIVER_VERSION = "0.3"
 
 INHG_PER_MBAR = 0.0295299830714
-CM_PER_IN = 2.54
 MPH_TO_KPH = 1.60934
 MPS_TO_KPH = 3.6
 BEAFORT_TO_KPH = {0: 1, 1: 3.0, 2: 9.0, 3: 15.0, 4: 24.0, 5: 34.0, 6: 43.0,
@@ -234,7 +233,7 @@ class CloudClient(Collector):
 
     noise is measured in dB
     co2 is measured in ppm
-    rain is measured in mm (or inch?)  not specified in docs!
+    rain is measured in mm
     temperatures are measured in C or F
 
     the user object indicates the units of the download
@@ -395,10 +394,8 @@ class CloudClient(Collector):
 
     @staticmethod
     def _cvt_rain(x, from_unit_dict):
-        # FIXME: verify that 0 is cm and 1 is inch
-        if from_unit_dict['unit'] == 1:
-            x *= CM_PER_IN
-        return x
+        # rain units are always mm, so convert to cm
+        return x * 0.1
 
     def startup(self):
         """Start a thread that collects data from the netatmo servers."""
