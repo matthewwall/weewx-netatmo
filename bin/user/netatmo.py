@@ -332,6 +332,8 @@ class CloudClient(Collector):
                                (tries + 1, self._max_tries, e))
                         logdbg("waiting %s seconds before retry" %
                                self.retry_wait)
+                        time.sleep(self.retry_wait)
+                        continue
                 else:
                     logerr("failed to get data after %d attempts" %
                            self._max_tries)
