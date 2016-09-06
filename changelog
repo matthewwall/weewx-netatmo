@@ -1,3 +1,10 @@
+0.4 06aug2016
+* incorporate changes from scott grey
+* default poll interval is now 300 instead of 600
+* wait before retry when network failures
+* fixed DEVICELIST_URL bug
+* fixed confgeditor invocation
+
 0.3 04aug2016
 * fix for rain calculation
 

@@ -42,7 +42,7 @@ import weewx.units
 import weewx.wxformulas
 
 DRIVER_NAME = 'netatmo'
-DRIVER_VERSION = "0.3"
+DRIVER_VERSION = "0.4"
 
 INHG_PER_MBAR = 0.0295299830714
 MPH_TO_KPH = 1.60934
@@ -69,7 +69,7 @@ def logerr(msg):
 def loader(config_dict, engine):
     return NetatmoDriver(**config_dict[DRIVER_NAME])
 
-def confeditor_loader(config_dict):
+def confeditor_loader():
     return NetatmoConfEditor()
 
 
@@ -115,6 +115,8 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
     DEFAULT_PORT = 80
     DEFAULT_HOST = ''
     # map from netatmo names to database schema names
+    # apparently battery_vp is in older firmware, whereas battery_percent is
+    # in newer firmware.
     DEFAULT_SENSOR_MAP = {
         '*.NAMain.AbsolutePressure': 'pressure',
         '*.NAMain.Temperature': 'inTemp',
@@ -124,21 +126,25 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         '*.NAMain.wifi_status': 'wifi_status',
         '*.NAModule1.Temperature': 'outTemp',
         '*.NAModule1.Humidity': 'outHumidity',
-        '*.NAModule1.rf_status': 'rf_status',
-        '*.NAModule1.battery_vp': 'battery_vp',
+        '*.NAModule1.rf_status': 'out_rf_status',
+        '*.NAModule1.battery_vp': 'out_battery_vp',
+        '*.NAModule1.battery_percent': 'outTempBatteryStatus',
         '*.NAModule4.Temperature': 'extraTemp1',
         '*.NAModule4.Humidity': 'extraHumid1',
-        '*.NAModule4.rf_status': 'rf_status',
-        '*.NAModule4.battery_vp': 'battery_vp',
+        '*.NAModule4.rf_status': 'extra_rf_status_1',
+        '*.NAModule4.battery_vp': 'extra_battery_vp_1',
+        '*.NAModule4.battery_percent': 'extra1BatteryStatus',
         '*.NAModule2.WindStrength': 'windSpeed',
         '*.NAModule2.WindAngle': 'windDir',
         '*.NAModule2.GustStrength': 'windGust',
         '*.NAModule2.GustAngle': 'windGustDir',
-        '*.NAModule2.rf_status': 'rf_status',
-        '*.NAModule2.battery_vp': 'battery_vp',
+        '*.NAModule2.rf_status': 'wind_rf_status',
+        '*.NAModule2.battery_vp': 'wind_battery_vp',
+        '*.NAModule2.battery_percent': 'windBatteryStatus',
         '*.NAModule3.Rain': 'rain',
-        '*.NAModule3.rf_status': 'rf_status',
-        '*.NAModule3.battery_vp': 'battery_vp'}
+        '*.NAModule3.rf_status': 'rain_rf_status',
+        '*.NAModule3.battery_vp': 'rain_battery_vp',
+        '*.NAModule3.battery_percent': 'rainBatteryStatus'}
 
     def __init__(self, **stn_dict):
         loginf("driver version is %s" % DRIVER_VERSION)
@@ -154,7 +160,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         elif mode.lower() == 'cloud':
             max_tries = int(stn_dict.get('max_tries', 5))
             retry_wait = int(stn_dict.get('retry_wait', 10)) # seconds
-            poll_interval = int(stn_dict.get('poll_interval', 600)) # seconds
+            poll_interval = int(stn_dict.get('poll_interval', 300)) # seconds
             username = stn_dict['username']
             password = stn_dict['password']
             client_id = stn_dict['client_id']
@@ -166,7 +172,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         else:
             raise ValueError("unsupported mode '%s'" % mode)
         self.collector.startup()
-    
+
     def closePort(self):
         self.collector.shutdown()
 
@@ -246,7 +252,7 @@ class CloudClient(Collector):
       lang: user locale
       reg_locale: regional preferences for date
       feel_like_algo: 0: humidex, 1: heat-index
-    
+
     rf_status is a mapping to rssi (+dB)
       0: 90, 1: 80, 2: 70, 3: 60
     wifi_status is a mapping to rssi (+dB)
@@ -282,10 +288,11 @@ class CloudClient(Collector):
     META_ITEMS = [
         'wifi_status', 'rf_status', 'battery_vp', 'co2_calibrating',
         '_id', 'module_name', 'last_status_store', 'last_seen',
+        'battery_percent',
         'firmware', 'last_setup', 'last_upgrade', 'date_setup']
 
     def __init__(self, username, password, client_id, client_secret,
-                 device_id=None, poll_interval=600, max_tries=3, retry_wait=30):
+                 device_id=None, poll_interval=300, max_tries=3, retry_wait=30):
         self._poll_interval = poll_interval
         self._max_tries = max_tries
         self._retry_wait = retry_wait
@@ -310,7 +317,8 @@ class CloudClient(Collector):
                         logerr("failed attempt %s of %s to get data: %s" %
                                (tries + 1, self._max_tries, e))
                         logdbg("waiting %s seconds before retry" %
-                               self.retry_wait)
+                               self._retry_wait)
+                        time.sleep(self._retry_wait)
                 else:
                     logerr("failed to get data after %d attempts" %
                            self._max_tries)
@@ -383,7 +391,7 @@ class CloudClient(Collector):
 
     @staticmethod
     def _cvt_speed(x, from_unit_dict):
-        # windunit: 0: kph, 1: mph, 2: m/s, 3: beafort, 4: knot        
+        # windunit: 0: kph, 1: mph, 2: m/s, 3: beafort, 4: knot
         if from_unit_dict['windunit'] == 1:
             x *= MPH_TO_KPH
         elif from_unit_dict['windunit'] == 2:
@@ -484,7 +492,7 @@ class CloudClient(Collector):
             self._last_update = 0
             self._raw_data = dict()
 
-        def get_data(self, device_id=None, stale=600):
+        def get_data(self, device_id=None, stale=300):
             if int(time.time()) - self._last_update > stale:
                 params = {'access_token': self._auth.access_token}
                 if device_id:
@@ -507,7 +515,7 @@ class CloudClient(Collector):
         resp_obj = json.loads(resp)
         logdbg("resp_obj: %s" % resp_obj)
         return resp_obj
-        
+
 
 class PacketSniffer(Collector):
     """listen for incoming packets then parse them.  put result on queue."""
@@ -625,7 +633,7 @@ if __name__ == "__main__":
     def get_json_data(username, password, c_id, c_secret):
         auth = CloudClient.ClientAuth(username, password, c_id, c_secret)
         params = {'access_token': auth.access_token, 'app_type': 'app_station'}
-        reply = CloudClient.post_request(CloudClient.DEVICELIST_URL, params)
+        reply = CloudClient.post_request(CloudClient.DATA_URL, params)
         print json.dumps(reply, sort_keys=True, indent=2)
 
     def test_parse(filename):

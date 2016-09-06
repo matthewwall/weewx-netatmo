@@ -28,11 +28,11 @@ wget -O weewx-netatmo.zip https://github.com/matthewwall/weewx-netatmo/archive/m
 
 1) install the driver:
 
-wee_extension --install weewx-netatmo.zip
+sudo wee_extension --install weewx-netatmo.zip
 
 2) select and configure the driver:
 
-wee_config --reconfigure
+sudo wee_config --reconfigure
 
 3) start weewx:
 
