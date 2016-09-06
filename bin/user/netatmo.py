@@ -42,7 +42,7 @@ import weewx.units
 import weewx.wxformulas
 
 DRIVER_NAME = 'netatmo'
-DRIVER_VERSION = "0.4"
+DRIVER_VERSION = "0.5"
 
 INHG_PER_MBAR = 0.0295299830714
 MPH_TO_KPH = 1.60934
@@ -142,6 +142,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         '*.NAModule2.battery_vp': 'wind_battery_vp',
         '*.NAModule2.battery_percent': 'windBatteryStatus',
         '*.NAModule3.Rain': 'rain',
+        '*.NAModule3.sum_rain_24': 'rain_total',
         '*.NAModule3.rf_status': 'rain_rf_status',
         '*.NAModule3.battery_vp': 'rain_battery_vp',
         '*.NAModule3.battery_percent': 'rainBatteryStatus'}
@@ -153,6 +154,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         loginf('sensor map is %s' % self.sensor_map)
         device_id = stn_dict.get('device_id', None)
         mode = stn_dict.get('mode', 'cloud')
+        self.last_rain = None
         if mode.lower() == 'sniff':
             port = int(stn_dict.get('port', NetatmoDriver.DEFAULT_PORT))
             addr = stn_dict.get('host', NetatmoDriver.DEFAULT_HOST)
@@ -226,6 +228,17 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
             return True
         return False
 
+    def _augment_packet(self, packet):
+        if 'rain_total' in packet:
+            total = packet['rain_total']
+            if (total is not None and self.last_rain is not None and
+                total < self.last_rain):
+                loginf("rain counter decrement ignored:"
+                       " new: %s old: %s" % (total, self.last_rain))
+            packet['rain'] = weewx.wxformulas.calculate_rain(
+                total, self.last_rain)
+            self.last_rain = total
+
 
 class Collector(object):
     queue = Queue.Queue()
@@ -283,7 +296,7 @@ class CloudClient(Collector):
     # these items are tracked from every module and every device
     DASHBOARD_ITEMS = [
         'Temperature', 'Humidity', 'AbsolutePressure', 'Pressure',
-        'CO2', 'Noise', 'Rain',
+        'CO2', 'Noise', 'Rain', 'sum_rain_24', 'sum_rain_1',
         'WindStrength', 'WindAngle', 'GustStrength', 'GustAngle']
     META_ITEMS = [
         'wifi_status', 'rf_status', 'battery_vp', 'co2_calibrating',
@@ -410,7 +423,7 @@ class CloudClient(Collector):
 
     @staticmethod
     def _cvt_rain(x, from_unit_dict):
-        # rain units are always mm, so convert to cm
+        # convert mm to cm since weewx METRIC wants cm
         return x * 0.1
 
     def startup(self):
