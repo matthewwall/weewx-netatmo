@@ -42,7 +42,7 @@ import weewx.units
 import weewx.wxformulas
 
 DRIVER_NAME = 'netatmo'
-DRIVER_VERSION = "0.5"
+DRIVER_VERSION = "0.6"
 
 INHG_PER_MBAR = 0.0295299830714
 MPH_TO_KPH = 1.60934
@@ -118,34 +118,34 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
     # apparently battery_vp is in older firmware, whereas battery_percent is
     # in newer firmware.
     DEFAULT_SENSOR_MAP = {
-        '*.NAMain.AbsolutePressure': 'pressure',
-        '*.NAMain.Temperature': 'inTemp',
-        '*.NAMain.Humidity': 'inHumidity',
-        '*.NAMain.CO2': 'co2',
-        '*.NAMain.Noise': 'noise',
-        '*.NAMain.wifi_status': 'wifi_status',
-        '*.NAModule1.Temperature': 'outTemp',
-        '*.NAModule1.Humidity': 'outHumidity',
-        '*.NAModule1.rf_status': 'out_rf_status',
-        '*.NAModule1.battery_vp': 'out_battery_vp',
-        '*.NAModule1.battery_percent': 'outTempBatteryStatus',
-        '*.NAModule4.Temperature': 'extraTemp1',
-        '*.NAModule4.Humidity': 'extraHumid1',
-        '*.NAModule4.rf_status': 'extra_rf_status_1',
-        '*.NAModule4.battery_vp': 'extra_battery_vp_1',
-        '*.NAModule4.battery_percent': 'extra1BatteryStatus',
-        '*.NAModule2.WindStrength': 'windSpeed',
-        '*.NAModule2.WindAngle': 'windDir',
-        '*.NAModule2.GustStrength': 'windGust',
-        '*.NAModule2.GustAngle': 'windGustDir',
-        '*.NAModule2.rf_status': 'wind_rf_status',
-        '*.NAModule2.battery_vp': 'wind_battery_vp',
-        '*.NAModule2.battery_percent': 'windBatteryStatus',
-        '*.NAModule3.Rain': 'rain',
-        '*.NAModule3.sum_rain_24': 'rain_total',
-        '*.NAModule3.rf_status': 'rain_rf_status',
-        '*.NAModule3.battery_vp': 'rain_battery_vp',
-        '*.NAModule3.battery_percent': 'rainBatteryStatus'}
+        'pressure':             '*.NAMain.AbsolutePressure',
+        'inTemp':               '*.NAMain.Temperature',
+        'inHumidity':           '*.NAMain.Humidity',
+        'co2':                  '*.NAMain.CO2',
+        'noise':                '*.NAMain.Noise',
+        'wifi_status':          '*.NAMain.wifi_status',
+        'outTemp':              '*.NAModule1.Temperature',
+        'outHumidity':          '*.NAModule1.Humidity',
+        'out_rf_status':        '*.NAModule1.rf_status',
+        'out_battery_vp':       '*.NAModule1.battery_vp',
+        'outTempBatteryStatus': '*.NAModule1.battery_percent',
+        'extraTemp1':           '*.NAModule4.Temperature',
+        'extraHumid1':          '*.NAModule4.Humidity',
+        'extra_rf_status_1':    '*.NAModule4.rf_status',
+        'extra_battery_vp_1':   '*.NAModule4.battery_vp',
+        'extra1BatteryStatus':  '*.NAModule4.battery_percent',
+        'windSpeed':            '*.NAModule2.WindStrength',
+        'windDir':              '*.NAModule2.WindAngle',
+        'windGust':             '*.NAModule2.GustStrength',
+        'windGustDir':          '*.NAModule2.GustAngle',
+        'wind_rf_status':       '*.NAModule2.rf_status',
+        'wind_battery_vp':      '*.NAModule2.battery_vp',
+        'windBatteryStatus':    '*.NAModule2.battery_percent',
+        'rain':                 '*.NAModule3.Rain',
+        'rain_total':           '*.NAModule3.sum_rain_24',
+        'rain_rf_status':       '*.NAModule3.rf_status',
+        'rain_battery_vp':      '*.NAModule3.battery_vp',
+        'rainBatteryStatus':    '*.NAModule3.battery_percent'}
 
     def __init__(self, **stn_dict):
         loginf("driver version is %s" % DRIVER_VERSION)
@@ -200,9 +200,9 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         packet['dateTime'] = int(time.time() + 0.5)
         packet['usUnits'] = weewx.METRIC
         for n in self.sensor_map:
-            label = self._find_match(n, data.keys())
+            label = self._find_match(self.sensor_map[n], data.keys())
             if label:
-                packet[self.sensor_map[n]] = data[label]
+                packet[n] = data[label]
         return packet
 
     @staticmethod
