@@ -202,7 +202,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         for n in self.sensor_map:
             label = self._find_match(self.sensor_map[n], data.keys())
             if label:
-                packet[n] = data[label]
+                packet[n] = data.get(label)
         return packet
 
     @staticmethod
