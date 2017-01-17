@@ -1,3 +1,8 @@
+0.7 16jan2017
+* handle URLError for connection refused
+* include license in the distribution
+* renamed readme
+
 0.6 31oct2016
 * use database_name = hardware_name pattern for sensor mapping
 

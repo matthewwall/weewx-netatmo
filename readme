@@ -1,5 +1,6 @@
 netatmo - weewx driver for netatmo weather stations
 Copyright 2015 Matthew Wall
+Distributed under terms of the GPLv3
 
 This driver has two modes of operation.  It can use the netatmo API to obtain
 data from the netatmo servers, or it can parse the packets sent from a netatmo
@@ -20,20 +21,21 @@ automatically obtains and updates the tokens needed to get data from the
 server.
 
 
+===============================================================================
 Installation instructions:
 
-0) download the driver:
+1) download the driver:
 
 wget -O weewx-netatmo.zip https://github.com/matthewwall/weewx-netatmo/archive/master.zip
 
-1) install the driver:
+2) install the driver:
 
 sudo wee_extension --install weewx-netatmo.zip
 
-2) select and configure the driver:
+3) select and configure the driver:
 
 sudo wee_config --reconfigure
 
-3) start weewx:
+4) start weewx:
 
 sudo /etc/init.d/weewx start
