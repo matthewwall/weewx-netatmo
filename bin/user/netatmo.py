@@ -42,7 +42,7 @@ import weewx.units
 import weewx.wxformulas
 
 DRIVER_NAME = 'netatmo'
-DRIVER_VERSION = "0.7"
+DRIVER_VERSION = "0.8"
 
 INHG_PER_MBAR = 0.0295299830714
 MPH_TO_KPH = 1.60934
@@ -327,7 +327,7 @@ class CloudClient(Collector):
                     try:
                         CloudClient.get_data(self._sd, self._device_id)
                         break
-                    except urllib2.HTTPError, e:
+                    except (urllib2.HTTPError, urllib2.URLError), e:
                         logerr("failed attempt %s of %s to get data: %s" %
                                (tries + 1, self._max_tries, e))
                         logdbg("waiting %s seconds before retry" %
