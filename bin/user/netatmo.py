@@ -1,6 +1,6 @@
 #!/usr/bin/python
-# $Id: netatmo.py 1489 2016-04-27 09:58:13Z mwall $
 # Copyright 2015 Matthew Wall
+# Distributed under the terms of the GNU Public License (GPLv3)
 #
 # Thanks to phillippe larduinat for publishing lnetatmo.py
 #   https://github.com/philippelt/netatmo-api-python
@@ -42,7 +42,7 @@ import weewx.units
 import weewx.wxformulas
 
 DRIVER_NAME = 'netatmo'
-DRIVER_VERSION = "0.6"
+DRIVER_VERSION = "0.7"
 
 INHG_PER_MBAR = 0.0295299830714
 MPH_TO_KPH = 1.60934
@@ -149,8 +149,9 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
 
     def __init__(self, **stn_dict):
         loginf("driver version is %s" % DRIVER_VERSION)
-        self.sensor_map = stn_dict.get(
-            'sensor_map', NetatmoDriver.DEFAULT_SENSOR_MAP)
+        self.sensor_map = dict(NetatmoDriver.DEFAULT_SENSOR_MAP)
+        if 'sensor_map' in stn_dict:
+            self.sensor_map.update(stn_dict['sensor_map'])
         loginf('sensor map is %s' % self.sensor_map)
         device_id = stn_dict.get('device_id', None)
         mode = stn_dict.get('mode', 'cloud')

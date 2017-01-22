@@ -1,3 +1,7 @@
+0.7 22jan2017
+* user-specified map augments the default instead of replacing it
+* update license
+
 0.6 31oct2016
 * use database_name = hardware_name pattern for sensor mapping
 

@@ -1,5 +1,6 @@
 netatmo - weewx driver for netatmo weather stations
 Copyright 2015 Matthew Wall
+Distributed under terms of the GPLv3
 
 This driver has two modes of operation.  It can use the netatmo API to obtain
 data from the netatmo servers, or it can parse the packets sent from a netatmo
