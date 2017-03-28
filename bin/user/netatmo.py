@@ -42,7 +42,7 @@ import weewx.units
 import weewx.wxformulas
 
 DRIVER_NAME = 'netatmo'
-DRIVER_VERSION = "0.8"
+DRIVER_VERSION = "0.9"
 
 INHG_PER_MBAR = 0.0295299830714
 MPH_TO_KPH = 1.60934
@@ -522,7 +522,7 @@ class CloudClient(Collector):
         url = CloudClient.NETATMO_URL + url
         params = urlencode(params)
         headers = {
-            "Content-Type": "application/x-www-form-urlencoded;charset=urf-8"}
+            "Content-Type": "application/x-www-form-urlencoded;charset=utf-8"}
         logdbg("url: %s data: %s hdr: %s" % (url, params, headers))
         req = urllib2.Request(url=url, data=params, headers=headers)
         resp = urllib2.urlopen(req).read(65535)
