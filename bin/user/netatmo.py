@@ -193,7 +193,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
                 if pkt:
                     yield pkt
             except Queue.Empty:
-                logdbg('empty queue')
+                pass
 
     def data_to_packet(self, data):
         # convert netatmo data to format for database
