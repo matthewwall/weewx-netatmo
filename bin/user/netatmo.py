@@ -42,7 +42,7 @@ import weewx.units
 import weewx.wxformulas
 
 DRIVER_NAME = 'netatmo'
-DRIVER_VERSION = "0.9"
+DRIVER_VERSION = "0.10"
 
 INHG_PER_MBAR = 0.0295299830714
 MPH_TO_KPH = 1.60934
@@ -155,7 +155,6 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         loginf('sensor map is %s' % self.sensor_map)
         device_id = stn_dict.get('device_id', None)
         mode = stn_dict.get('mode', 'cloud')
-        self.last_rain = None
         if mode.lower() == 'sniff':
             port = int(stn_dict.get('port', NetatmoDriver.DEFAULT_PORT))
             addr = stn_dict.get('host', NetatmoDriver.DEFAULT_HOST)
@@ -229,17 +228,6 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
             return True
         return False
 
-    def _augment_packet(self, packet):
-        if 'rain_total' in packet:
-            total = packet['rain_total']
-            if (total is not None and self.last_rain is not None and
-                total < self.last_rain):
-                loginf("rain counter decrement ignored:"
-                       " new: %s old: %s" % (total, self.last_rain))
-            packet['rain'] = weewx.wxformulas.calculate_rain(
-                total, self.last_rain)
-            self.last_rain = total
-
 
 class Collector(object):
     queue = Queue.Queue()
@@ -284,12 +272,14 @@ class CloudClient(Collector):
 
     # mapping between observation name and function used to convert it
     CONVERSIONS = {
-        'Temperature': '_cvt_temperature',
-        'AbsolutePressure': '_cvt_pressure',
-        'Pressure': '_cvt_pressure',
-        'WindStrength': '_cvt_speed',
-        'GustStrength': '_cvt_speed',
-        'Rain': '_cvt_rain'}
+#        'Temperature': '_cvt_temperature',
+#        'AbsolutePressure': '_cvt_pressure',
+#        'Pressure': '_cvt_pressure',
+#        'WindStrength': '_cvt_speed',
+#        'GustStrength': '_cvt_speed',
+        'Rain': '_cvt_rain',
+        'sum_rain_24': '_cvt_rain',
+        'sum_rain_1': '_cvt_rain'}
 
     # list of source units we need to watch for
     UNITS = ['unit', 'windunit', 'pressureunit']
@@ -374,15 +364,14 @@ class CloudClient(Collector):
             if n in x['dashboard_data']:
                 data[n] = x['dashboard_data'][n]
         # do any unit conversions - everything converts to weewx.METRIC
-# it looks like all the data are METRIC even when netatmo units say otherwise
-#        for n in data:
-#            try:
-#                func = CloudClient.CONVERSIONS.get(n)
-#                if func:
-#                    data[n] = getattr(CloudClient, func)(data[n], units_dict)
-#            except ValueError, e:
-#                logerr("unit conversion failed for %s: %s" % (data[n], e))
-#                data[n] = None
+        for n in data:
+            if n in CloudClient.CONVERSIONS:
+                try:
+                    func = CloudClient.CONVERSIONS.get(n)
+                    data[n] = getattr(CloudClient, func)(data[n], units_dict)
+                except ValueError, e:
+                    logerr("unit conversion failed for %s: %s" % (data[n], e))
+                    data[n] = None
         return data
 
     @staticmethod
