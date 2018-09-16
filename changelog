@@ -1,3 +1,6 @@
+0.12 11sep2018
+* deal with missing time_utc from server
+
 0.11 08jul2018
 * explicitly catch socket timeouts since URLError does not in python 2.7
 

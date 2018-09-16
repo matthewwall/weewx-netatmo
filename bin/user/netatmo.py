@@ -40,9 +40,10 @@ import weewx.drivers
 import weewx.engine
 import weewx.units
 import weewx.wxformulas
+import weeutil.weeutil
 
 DRIVER_NAME = 'netatmo'
-DRIVER_VERSION = "0.11"
+DRIVER_VERSION = "0.12"
 
 INHG_PER_MBAR = 0.0295299830714
 MPH_TO_KPH = 1.60934
@@ -323,6 +324,9 @@ class CloudClient(Collector):
                         logdbg("waiting %s seconds before retry" %
                                self._retry_wait)
                         time.sleep(self._retry_wait)
+                    except Exception, e:
+                        logerr("exception in netatmo-client: %s" % e)
+                        weeutil.weeutil.log_traceback('*** ', syslog.LOG_DEBUG)
                 else:
                     logerr("failed to get data after %d attempts" %
                            self._max_tries)
@@ -356,7 +360,9 @@ class CloudClient(Collector):
     @staticmethod
     def extract_data(x, units_dict):
         """Extract data we care about from a device or module"""
-        data = {'time_utc': x['dashboard_data']['time_utc']}
+        data = dict()
+        if 'time_utc' in x['dashboard_data']:
+            data['time_utc'] = x['dashboard_data']['time_utc']
         for n in CloudClient.META_ITEMS:
             if n in x:
                 data[n] = x[n]
