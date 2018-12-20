@@ -10,7 +10,7 @@ def loader():
 class NetatmoInstaller(ExtensionInstaller):
     def __init__(self):
         super(NetatmoInstaller, self).__init__(
-            version="0.12",
+            version="0.13",
             name='netatmo',
             description='Driver for netatmo weather stations.',
             author="Matthew Wall",

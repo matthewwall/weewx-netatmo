@@ -43,7 +43,7 @@ import weewx.wxformulas
 import weeutil.weeutil
 
 DRIVER_NAME = 'netatmo'
-DRIVER_VERSION = "0.12"
+DRIVER_VERSION = "0.13"
 
 INHG_PER_MBAR = 0.0295299830714
 MPH_TO_KPH = 1.60934
@@ -361,6 +361,9 @@ class CloudClient(Collector):
     def extract_data(x, units_dict):
         """Extract data we care about from a device or module"""
         data = dict()
+        # if contact with sensors is lost, then there will be no dashboard_data
+        if 'dashboard_data' not in x:
+            return data
         if 'time_utc' in x['dashboard_data']:
             data['time_utc'] = x['dashboard_data']['time_utc']
         for n in CloudClient.META_ITEMS:

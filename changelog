@@ -1,3 +1,6 @@
+0.13 20dec2018
+* deal with 'dashboard_data' not existing when lost contact with sensors
+
 0.12 11sep2018
 * deal with missing time_utc from server
 
