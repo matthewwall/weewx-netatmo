@@ -43,7 +43,7 @@ import weewx.wxformulas
 import weeutil.weeutil
 
 DRIVER_NAME = 'netatmo'
-DRIVER_VERSION = "0.13"
+DRIVER_VERSION = "0.14"
 
 INHG_PER_MBAR = 0.0295299830714
 MPH_TO_KPH = 1.60934
