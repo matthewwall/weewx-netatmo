@@ -518,7 +518,7 @@ class CloudClient(Collector):
     def post_request(url, params):
         # netatmo response body size is limited to 64K
         url = CloudClient.NETATMO_URL + url
-        params = urlencode(params)
+        params = urlencode(params).encode("utf-8")
         headers = {
             "Content-Type": "application/x-www-form-urlencoded;charset=utf-8"}
         logdbg("url: %s data: %s hdr: %s" % (url, params, headers))
