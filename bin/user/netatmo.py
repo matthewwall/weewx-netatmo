@@ -25,16 +25,16 @@ As of april 2016 that means the base station, 'outside' T/H, additional T/H,
 rain, and wind.
 """
 
-from __future__ import with_statement
-import Queue
+
+import queue
 import json
 import re
 import socket
 import syslog
 import threading
 import time
-from urllib import urlencode
-import urllib2
+from urllib.parse import urlencode
+import urllib.request, urllib.error, urllib.parse
 
 import weewx.drivers
 import weewx.engine
@@ -98,16 +98,16 @@ class NetatmoConfEditor(weewx.drivers.AbstractConfEditor):
 
     def prompt_for_settings(self):
         settings = dict()
-        print "Specify the mode for obtaining data, either 'cloud' or 'sniff'"
+        print("Specify the mode for obtaining data, either 'cloud' or 'sniff'")
         settings['mode'] = self._prompt('mode', 'cloud', ['cloud', 'sniff'])
         if settings['mode'] == 'cloud':
-            print "Specify the username for netatmo.com"
+            print("Specify the username for netatmo.com")
             self._prompt('username')
-            print "Specify the password for netatmo.com"
+            print("Specify the password for netatmo.com")
             self._prompt('password')
-            print "Specify the client_id from dev.netatmo.com"
+            print("Specify the client_id from dev.netatmo.com")
             self._prompt('client_id')
-            print "Specify the client_secret from dev.netatmo.com"
+            print("Specify the client_secret from dev.netatmo.com")
             self._prompt('client_secret')
         return settings
 
@@ -192,7 +192,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
                 logdbg('packet: %s' % pkt)
                 if pkt:
                     yield pkt
-            except Queue.Empty:
+            except queue.Empty:
                 pass
 
     def data_to_packet(self, data):
@@ -201,7 +201,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
         packet['dateTime'] = int(time.time() + 0.5)
         packet['usUnits'] = weewx.METRIC
         for n in self.sensor_map:
-            label = self._find_match(self.sensor_map[n], data.keys())
+            label = self._find_match(self.sensor_map[n], list(data.keys()))
             if label:
                 packet[n] = data.get(label)
         return packet
@@ -231,7 +231,7 @@ class NetatmoDriver(weewx.drivers.AbstractDevice):
 
 
 class Collector(object):
-    queue = Queue.Queue()
+    queue = queue.Queue()
 
     def startup(self):
         pass
@@ -318,13 +318,13 @@ class CloudClient(Collector):
                     try:
                         CloudClient.get_data(self._sd, self._device_id)
                         break
-                    except (socket.error, socket.timeout, urllib2.HTTPError, urllib2.URLError), e:
+                    except (socket.error, socket.timeout, urllib.error.HTTPError, urllib.error.URLError) as e:
                         logerr("failed attempt %s of %s to get data: %s" %
                                (tries + 1, self._max_tries, e))
                         logdbg("waiting %s seconds before retry" %
                                self._retry_wait)
                         time.sleep(self._retry_wait)
-                    except Exception, e:
+                    except Exception as e:
                         logerr("exception in netatmo-client: %s" % e)
                         weeutil.weeutil.log_traceback('*** ', syslog.LOG_DEBUG)
                 else:
@@ -378,7 +378,7 @@ class CloudClient(Collector):
                 try:
                     func = CloudClient.CONVERSIONS.get(n)
                     data[n] = getattr(CloudClient, func)(data[n], units_dict)
-                except ValueError, e:
+                except ValueError as e:
                     logerr("unit conversion failed for %s: %s" % (data[n], e))
                     data[n] = None
         return data
@@ -518,12 +518,12 @@ class CloudClient(Collector):
     def post_request(url, params):
         # netatmo response body size is limited to 64K
         url = CloudClient.NETATMO_URL + url
-        params = urlencode(params)
+        params = urlencode(params).encode("utf-8")
         headers = {
             "Content-Type": "application/x-www-form-urlencoded;charset=utf-8"}
         logdbg("url: %s data: %s hdr: %s" % (url, params, headers))
-        req = urllib2.Request(url=url, data=params, headers=headers)
-        resp = urllib2.urlopen(req).read(65535)
+        req = urllib.request.Request(url=url, data=params, headers=headers)
+        resp = urllib.request.urlopen(req).read(65535)
         resp_obj = json.loads(resp)
         logdbg("resp_obj: %s" % resp_obj)
         return resp_obj
@@ -623,7 +623,7 @@ if __name__ == "__main__":
         import weeutil.weeutil
         driver = NetatmoDriver({'mode': 'sniff'})
         for pkt in driver.genLoopPackets():
-            print weeutil.weeutil.timestamp_to_string(pkt['dateTime']), pkt
+            print(weeutil.weeutil.timestamp_to_string(pkt['dateTime']), pkt)
 
     def run_cloud_driver(username, password, c_id, c_secret):
         import weeutil.weeutil
@@ -633,7 +633,7 @@ if __name__ == "__main__":
                                    username=username, password=password,
                                    client_id=c_id, client_secret=c_secret)
             for pkt in driver.genLoopPackets():
-                print weeutil.weeutil.timestamp_to_string(pkt['dateTime']), pkt
+                print(weeutil.weeutil.timestamp_to_string(pkt['dateTime']), pkt)
         except KeyboardInterrupt:
             driver.closePort()
 
@@ -646,28 +646,28 @@ if __name__ == "__main__":
         auth = CloudClient.ClientAuth(username, password, c_id, c_secret)
         params = {'access_token': auth.access_token, 'app_type': 'app_station'}
         reply = CloudClient.post_request(CloudClient.DATA_URL, params)
-        print json.dumps(reply, sort_keys=True, indent=2)
+        print(json.dumps(reply, sort_keys=True, indent=2))
 
     def test_parse(filename):
         lines = []
         with open(filename, "r") as f:
             while f:
                 lines.append(f.readline())
-        print PacketSniffer.Packet.lines2packets(''.join(lines))
+        print(PacketSniffer.Packet.lines2packets(''.join(lines)))
 
     def ppv(label, x, level=0):
         """pretty-print a variable, recursing if it is a dict"""
         indent = '  '
         if type(x) is dict:
-            print "%s%s" % (indent * level, label)
+            print("%s%s" % (indent * level, label))
             for n in x:
                 ppv(n, x[n], level=level+1)
         elif type(x) is list:
-            print "%s[" % (indent * level)
+            print("%s[" % (indent * level))
             for i, y in enumerate(x):
                 ppv("%s %s" % (label, i), y, level=level+1)
-            print "%s]" % (indent * level)
+            print("%s]" % (indent * level))
         else:
-            print "%s%s=%s" % (indent * level, label, x)
+            print("%s%s=%s" % (indent * level, label, x))
 
     main()
